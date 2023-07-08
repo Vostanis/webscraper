@@ -1,0 +1,85 @@
+use chrono::Local;
+use reqwest::Client;
+use std::collections::HashMaps;
+use uuid::Uuid;
+
+// scraper
+#[derive(Debug)]
+struct Scraper {
+    status: Status,
+    info: Info,
+    client: reqwest::Client,
+}
+
+#[derive(Debug)]
+struct Info {
+    // Known @ compile time
+    Keycard: [u8, 16],
+    Name: String,
+
+    // Known @ exec time
+    TimeOfBirth: DateTime<Local>,
+    Birthplace: String,
+    Location: String,
+    TimeOfDeath: DateTime<Local>,
+    Deathplace: String,
+}
+
+#[derive(Debug)]
+enum Status {
+    Idle,           // awaiting action
+    Retrieving,     // retrieving data
+    Scanning,       // scanning a location before hopping, or a file before downloading
+    Init,           // initialising ...
+    Error,
+}
+
+impl Scraper {
+    // returns Idle status
+    fn spawn() -> Scraper {
+        Scraper {
+            status: Status::Idle,
+            info: {
+                Keycard: Uuid::new_v4(),
+                Name: String::new("Jak"),               // <<<<<<<< EXAMPLE
+                Location: String::new("Home"),
+                TimeOfBirth: Local::now(),
+            },
+            client: reqwest::Client::new(),
+        }
+    }
+/*
+    fn live() -> Self {
+
+    }
+
+    fn is_alive() -> Self {
+
+    }
+
+    fn kill() -> Self {
+
+    }
+
+    fn handle_status(&self) {
+        Status::Idle => {},
+        Status::Retrieving => {},
+        Status::Scanning => {},
+        Status::Init => {
+            &self.spawn();
+        },
+        Status::Error => {},
+    }
+*/
+}
+
+fn main() { 
+    let mut db: HashMap<[u8; 16], Scraper> = HashMap::new();
+    let mut s: Scraper = Scraper::spawn();   
+    println!("{}:{} @ {}", s.info.Keycard, s.info.Name, s.info.Location);
+
+    db.insert(s.info.Keycard, s)
+    for (k,v) in &db {
+        println!("DB ~ {:?}:{:?}", k, v);
+    }    
+}

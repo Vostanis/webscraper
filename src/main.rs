@@ -1,63 +1,66 @@
-use reqwest::Client;
-use std::collections::HashMaps;
+use chrono::{DateTime, Utc};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use uuid::Uuid;
 
-// generals
-fn generate_primary_key() -> [u8; 16] {
-    let uuid = Uuid::new_v4();
-    &uuid.as_bytes();
-}
-
-// db
-let mut db: HashMap<uuid::Bytes, String> = HashMap::New();
-
 // scraper
+#[derive(Debug)]
 struct Scraper {
-    state: Status,
+    status: Status,
     info: Info,
-    // purpose
+    client: reqwest::Client,
 }
 
+#[derive(Debug)]
 struct Info {
-    // Known @ compile time
-    Keycard: uuid::Bytes,
-    Name: String,
+    key: Uuid,
+    name: String,
+    location: String,
 
-    // Known @ exec time
-    TimeOfBirth: String,
-    Birthplace: String,
-    TimeOfDeath: String,
-    Deathplace: String,
+    time_of_birth: DateTime<Utc>,
+    birthplace: String,
+    time_of_death: Option<DateTime<Utc>>,
+    deathplace: Option<String>,
 }
 
+#[derive(Debug)]
 enum Status {
     Idle,           // awaiting action
     Retrieving,     // retrieving data
     Scanning,       // scanning a location before hopping, or a file before downloading
     Init,           // initialising ...
+    Dead,
     Error,
 }
 
 impl Scraper {
-
+    // returns Idle status
     fn spawn() -> Self {
-        let client = Client::new();
-        //randomly generate keycard and name
-        //let  = generate_primary_key();
+        Self {
+            status: Status::Idle,
+            info: Info {
+                key: Uuid::new_v4(),
+                name: String::from("Jak"),               // <<<<<<<< EXAMPLE
+                location: String::from("home"),
+
+                time_of_birth: Utc::now(),
+                birthplace: String::from("home"),
+                time_of_death: None,
+                deathplace: None,
+            },
+            client: reqwest::Client::new(),
+        }
     }
-
-    fn live() -> Self {
-
+/*
+    fn current_status(&self) -> Status {
+        self.status.clone()
     }
-
-    fn is_alive() -> Self {
-
+*/
+    fn set_status(&mut self, new_status: Status) {
+        self.status = new_status;
     }
-
-    fn kill() -> Self {
-
-    }
-
+/*
     fn handle_status(&self) {
         Status::Idle => {},
         Status::Retrieving => {},
@@ -66,9 +69,20 @@ impl Scraper {
             &self.spawn();
         },
         Status::Error => {},
-    } 
+    }
+*/
 }
 
-fn main() {
-    let mut active_state = ScraperState::Init;
+fn main() { 
+    let mut db: HashMap<Uuid, Scraper> = HashMap::new();
+    let mut s: Scraper = Scraper::spawn();   
+    println!("{}:{} @ {}", s.info.key, s.info.name, s.info.location);
+
+    db.insert(s.info.key, s);
+    for (k,v) in &db {
+        println!("DB ~ {:#?}:{:#?}", k, v);
+    } 
+    //s.current_status();
+    //s.set_status(Status::Error);
+    //s.current_status();
 }
