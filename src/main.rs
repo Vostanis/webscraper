@@ -53,7 +53,8 @@ struct TimeAndPlace {
 }
 
 impl Scraper {
-    // returns Idle status
+    
+    // INITIALISE
     fn spawn() -> Self {
         Self {
             status: Status::Idle,
@@ -71,15 +72,15 @@ impl Scraper {
         }
     }
 
-    // geography
+    // GEOGRAPHY
     fn origin(&self) -> Option<&TimeAndPlace> {
         self.info.trail.first()
     }
-
     fn current_location(&self) -> Option<&TimeAndPlace> {
         self.info.trail.last()
     }
 
+    // STATUS HANDLING
 /*
     fn current_status(&self) -> Status {
         self.status.clone()
