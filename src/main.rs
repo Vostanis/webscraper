@@ -1,7 +1,24 @@
+/*
+    NOTES
+    =================================
+    
+    1. States & utility of individual webscrapers
+        a. get(/post?) schedule
+        b. ip/location trail
+    2. Active Tracking Database = Arc(Mutex(HashMap))) - comes after;
+        replace HashMap with Hashmap<Uuid, Arc<Mutex<Scraper>>> due to borrow issue
+        let mut db: HashMap<Uuid, Arc<Mutex, <Scraper>>> = Arc::new(Mutex::new(HashMap::new()));
+*/
+
+#![allow(unused_imports)]
+#![allow(dead_code)]
+
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::vec::Vec;
 use uuid::Uuid;
 
 // scraper
@@ -16,12 +33,7 @@ struct Scraper {
 struct Info {
     key: Uuid,
     name: String,
-    location: String,
-
-    time_of_birth: DateTime<Utc>,
-    birthplace: String,
-    time_of_death: Option<DateTime<Utc>>,
-    deathplace: Option<String>,
+    trail: Vec<TimeAndPlace>,
 }
 
 #[derive(Debug)]
@@ -34,6 +46,12 @@ enum Status {
     Error,
 }
 
+#[derive(Debug)]
+struct TimeAndPlace {
+    time: DateTime<Utc>,
+    location: String,
+}
+
 impl Scraper {
     // returns Idle status
     fn spawn() -> Self {
@@ -42,16 +60,26 @@ impl Scraper {
             info: Info {
                 key: Uuid::new_v4(),
                 name: String::from("Jak"),               // <<<<<<<< EXAMPLE
-                location: String::from("home"),
-
-                time_of_birth: Utc::now(),
-                birthplace: String::from("home"),
-                time_of_death: None,
-                deathplace: None,
+                trail: vec![
+                    TimeAndPlace {
+                        time: Utc::now(),
+                        location: String::from("Home"),
+                    }
+                ],
             },
             client: reqwest::Client::new(),
         }
     }
+
+    // geography
+    fn origin(&self) -> Option<&TimeAndPlace> {
+        self.info.trail.first()
+    }
+
+    fn current_location(&self) -> Option<&TimeAndPlace> {
+        self.info.trail.last()
+    }
+
 /*
     fn current_status(&self) -> Status {
         self.status.clone()
@@ -74,15 +102,6 @@ impl Scraper {
 }
 
 fn main() { 
-    let mut db: HashMap<Uuid, Scraper> = HashMap::new();
-    let mut s: Scraper = Scraper::spawn();   
-    println!("{}:{} @ {}", s.info.key, s.info.name, s.info.location);
-
-    db.insert(s.info.key, s);
-    for (k,v) in &db {
-        println!("DB ~ {:#?}:{:#?}", k, v);
-    } 
-    //s.current_status();
-    //s.set_status(Status::Error);
-    //s.current_status();
-}
+    let s: Scraper = Scraper::spawn();   
+    println!("{}:{} @ {:#?}", s.info.key, s.info.name, s.info.trail);
+ }
